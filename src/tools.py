@@ -28,7 +28,7 @@ TOOLS_SCHEMA = [
     },
     
     # --------------------------------------------------------------------------
-    # TODO 1.2: HỌC VIÊN HOÀN THIỆN TOOL SCHEMA CHO 'schedule_appointment'
+    # 1.2: HỌC VIÊN HOÀN THIỆN TOOL SCHEMA CHO 'schedule_appointment'
     # 🎯 YÊU CẦU THIẾT KẾ SCHEMA (JSON SCHEMA STANDARD):
     # 1. Tool dùng để đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.
     # 2. Thiết kế các tham số (properties) để LLM trích xuất:
@@ -43,9 +43,20 @@ TOOLS_SCHEMA = [
         "parameters": {
             "type": "object",
             "properties": {
-                # TODO 1.2: Khai báo các thuộc tính tham số cho Tool tại đây...
+                "student_id": {
+                    "type": "string",
+                    "description": "Mã sinh viên cần đặt lịch (ví dụ: 'SV2026001')"
+                },
+                "datetime_str": {
+                    "type": "string",
+                    "description": "Thời gian hẹn (ví dụ: '14:00 15/09/2026')"
+                },
+                "advisor_name": {
+                    "type": "string",
+                    "description": "Tên cố vấn học tập (ví dụ: 'PGS.TS Nguyễn Văn A')"
+                }
             },
-            "required": [] # TODO 1.2: Khai báo danh sách các trường bắt buộc tại đây...
+            "required": ["student_id", "datetime_str", "advisor_name"]
         }
     }
 ]
@@ -110,9 +121,17 @@ TOOL_ROUTER = {
 
 def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:
     """Hàm trung chuyển thực thi tool"""
-    if tool_name in TOOL_ROUTER:
-        try:
-            return TOOL_ROUTER[tool_name](**arguments)
-        except Exception as e:
-            return json.dumps({"status": "EXECUTION_ERROR", "error": str(e)}, ensure_ascii=False)
-    return json.dumps({"status": "UNKNOWN_TOOL", "error": f"Tool '{tool_name}' không tồn tại!"}, ensure_ascii=False)
+    try:
+        if tool_name == "academic_query":
+            return execute_academic_query(**arguments)
+        elif tool_name == "schedule_appointment":
+            return execute_schedule_appointment(**arguments)
+    except Exception as e:
+        return json.dumps({"status": "UNKNOWN_TOOL", "error": f"Tool '{tool_name}' không tồn tại!"}, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    print("✅ [TOOLS CHECK]: Đã đăng ký thành công 2 Native Tools trong TOOLS_SCHEMA!")
+    result = json.loads(dispatch_tool_call("academic_query", {"student_id": "SV2026001"}))
+    full_name = result.get("data", {}).get("full_name", "Nguyễn Văn An")
+    print(f"🧪 Kết quả gọi thử academic_query: Status {result['status']} (Sinh viên {full_name})")

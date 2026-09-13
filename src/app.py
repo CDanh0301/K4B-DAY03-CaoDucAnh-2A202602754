@@ -25,7 +25,7 @@ from prompts import (
 )
 from providers import get_llm_provider
 
-load_dotenv()
+load_dotenv(override=True)
 
 def load_test_cases():
     """Tải danh sách 5 test cases từ config/test_cases.json hoặc config/test_cases.example.json"""
